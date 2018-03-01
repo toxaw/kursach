@@ -65,7 +65,7 @@ class Schedule
      	$res = self::$dbh->query("SELECT discipline.name,workers.FIO,time.start,time.end,nodes.numb_auditory,nodes.numb_two_week
          FROM nodes JOIN discipline ON nodes.id_discipline=discipline.id JOIN workers ON workers.id=nodes.id_worker JOIN groups
           ON groups.id=nodes.id_group JOIN time ON time.id=nodes.id_time WHERE nodes.id_main={$res[0]['id']} && nodes.numb_two_week=".
-          get_diffDateInDay('',$res[0]['start'])." && groups.gname='{$group}' ;")->fetchAll();  
+          get_diffDateInDay('',$res[0]['start'])." && groups.gname='{$group}' ORDER BY nodes.numb_two_week;")->fetchAll();  
        	if(count($res)==0)return 2;   
         return ;    
     }
@@ -82,7 +82,7 @@ class Schedule
     	$date =date_diff(new DateTime($now), new DateTime($_date))->days+1;
 		return new DateTime($now) >= new DateTime($_date)?($date==7 || $date>=14)?0:($date<=7?$date:$date-1):0;
     }
-    private static function get_diffTimeInTime($now,$_time)
+    public static function get_diffTimeInTime($now,$_time)
     {
     	$time1 = $now==''?time():strtotime($now); 
 		return gmdate('H:i:s',abs($time1 - strtotime($_time)));
@@ -90,8 +90,36 @@ class Schedule
     private static function get_nowDate($res)
     {
     	$mass[]=array();
-    		
-    	return ;
+    	$nowdt =date("H:i:s");//сейчас дата/время
+    	if(strtotime($res[0]['start'])>strtotime($nowdt))//если дата меньше  начала первой пары ,то
+    	{
+    		$mass[0]='none';
+    		$mass[1]='none';
+    		$mass[2]=$res[0];
+    	}
+    	else if(strtotime($res[0]['end'])>=strtotime($nowdt) && strtotime($res[0]['start'])<=strtotime($nowdt))//если дата подходит под первую пару ,то
+    	{
+    		$mass[0]='none';
+    		$mass[1]=$res[0];
+    		$mass[2]=count($res)>1?$res[1]:'none';
+    	}
+    	else if(strtotime($res[count($res)-1]['end'])<strtotime($nowdt))//если дата больше конца последней пары ,то
+    	{   		
+    		$mass[0]=$res[count($res)-1];
+    		$mass[1]='none';
+    		$mass[2]='none';
+    	}
+    	else for($i=1;i<count($res);$i++) //если внутри рассписания кроме первой пары
+    		{
+    			if(strtotime($res[$i-1]['end'])<strtotime($nowdt) && strtotime($res[$i]['end'])>=strtotime($nowdt))
+    			{
+    				$mass[0]=$res[$i-1];
+    				$mass[1]=$res[$i];
+    				$mass[2]=$i==count($res)-1?'none':$res[$i+1];
+    				break;
+    			}
+    		}
+    	return $mass;
     }
 }
 //-----------класс 2
