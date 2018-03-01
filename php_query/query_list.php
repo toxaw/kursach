@@ -18,9 +18,9 @@ class Schedule
 	}
 	private static function countSch()
 	{
-		return self::$dbh->query("SELECT * FROM `main` WHERE start<=now() and end>now();")->fetchAll();;
+		return self::$dbh->query("SELECT * FROM `main` WHERE start<=now() and end>now();")->fetchAll();
 	}
-    public static function get_week_forGroup($week,$group)
+   /* public static function get_week_forGroup($week,$group)
     {
     	$res = self::countSch();
         if(count($res)==0)	return 1;
@@ -55,19 +55,21 @@ class Schedule
           ON groups.id=nodes.id_group JOIN time ON time.id=nodes.id_time WHERE nodes.id_main={$res[0]['id']} && nodes.numb_two_week".
           ($week?">":"<=")."6 && nodes.numb_auditory='{$auditory}';")->fetchAll();  
        	return array_merge($mass, $res);   
-    }
+    }*/
     public static function get_now_forGroup($group)
+    {
+    	    
+    }
+    public static function get_dayListForGroup($date,$group)
     {
     	$res = self::countSch();
     	if(count($res)==0)	return 1;
-    	$mass = array();  
-        $mass[] = array('name'=>$group,'sort'=>'group');
      	$res = self::$dbh->query("SELECT discipline.name,workers.FIO,time.start,time.end,nodes.numb_auditory,nodes.numb_two_week
          FROM nodes JOIN discipline ON nodes.id_discipline=discipline.id JOIN workers ON workers.id=nodes.id_worker JOIN groups
           ON groups.id=nodes.id_group JOIN time ON time.id=nodes.id_time WHERE nodes.id_main={$res[0]['id']} && nodes.numb_two_week=".
-          get_diffDateInDay('',$res[0]['start'])." && groups.gname='{$group}' ORDER BY nodes.numb_two_week;")->fetchAll();  
+          get_diffDateInDay($date,$res[0]['start'])." && groups.gname='{$group}' ORDER BY nodes.numb_two_week;")->fetchAll();  
        	if(count($res)==0)return 2;   
-        return ;    
+        return $res;
     }
     public static function get_now_forWorker($worker)
     {
@@ -87,7 +89,7 @@ class Schedule
     	$time1 = $now==''?time():strtotime($now); 
 		return gmdate('H:i:s',abs($time1 - strtotime($_time)));
     }
-    private static function get_nowDate($res)
+    private static function get_nowDateForList($res)
     {
     	$mass[]=array();
     	$nowdt =date("H:i:s");//сейчас дата/время
@@ -141,9 +143,4 @@ class BuilderFront
 //всего будет 8 методов
 //----------------------некоторая реализация
 Schedule::base_connect('127.0.0.1','schedule','root','');
-//print_r(Schedule::get_week_forGroup(false,'ПОКС-31'));
-//print_r(Schedule::get_week_forWorker(false,'Пухов С.В.'));
-//print_r(Schedule::get_week_forAuditory(false,'114'));
-//echo Schedule:: get_diffDateInDay('','2018-02-25');
-//echo Schedule:: get_diffTimeInTime('','12:35');
 ?>
