@@ -3,6 +3,7 @@
 class Schedule
 { 
 	private static $dbh;
+	//---------------------------------------------------------------------------------------------------------------------------------
 	public static function base_connect($host,$dbname,$login,$password)
     {
 		try {
@@ -16,6 +17,7 @@ class Schedule
 	{
 		return self::$dbh->query("SELECT * FROM `main` WHERE start<=now() and end>now();")->fetchAll();
 	}
+	//---------------------------------------------------------------------------------------------------------------------------------
     public static function get_now_forGroup($group)
     {
     	return get_nowDateForList(get_dayListForGroup('',$group));   
@@ -73,6 +75,7 @@ class Schedule
     	$time1 = $now==''?time():strtotime($now); 
 		return gmdate('H:i:s',abs($time1 - strtotime($_time)));
     }
+    //---------------------------------------------------------------------------------------------------------------------------------
     private static function get_nowDateForList($res)
     {
     	$mass[]=array();
