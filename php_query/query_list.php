@@ -1,6 +1,6 @@
 ﻿<?php
 //-----------класс 1
-//петод подключения к инициировани подключения к бд
+//метод подключения к инициировани подключения к бд
 // получить рассписание недель ,чей день сегодня входит(m1 по группе, m2 по преподавателю,m3 по аудитории) и указываем,верхняя или нижняя неделя
 // получить прошлую, сейчас и будущую пару ,чей день и время сегодня входит(m1 по группе, m2 по преподавателю,m3 по аудитории)
 //6 методов
@@ -16,50 +16,23 @@ class Schedule
 	    die();
 		}
 	}
-	private static function countSch()
+	public static function countSch()
 	{
 		return self::$dbh->query("SELECT * FROM `main` WHERE start<=now() and end>now();")->fetchAll();
 	}
-   /* public static function get_week_forGroup($week,$group)
-    {
-    	$res = self::countSch();
-        if(count($res)==0)	return 1;
-        $mass = array();  
-        $mass[] = array('start'=>$res[0]['start'],'end'=>$res[0]['end'],'name'=>$group,'sort'=>'qroup');     
-      	$res = self::$dbh->query("SELECT discipline.name,workers.FIO,time.start,time.end,nodes.numb_auditory,nodes.numb_two_week
-         FROM nodes JOIN discipline ON nodes.id_discipline=discipline.id JOIN workers ON workers.id=nodes.id_worker JOIN groups
-          ON groups.id=nodes.id_group JOIN time ON time.id=nodes.id_time WHERE nodes.id_main={$res[0]['id']} && nodes.numb_two_week".
-          ($week?">":"<=")."6 && groups.gname='{$group}';")->fetchAll();  
-       	return array_merge($mass, $res);
-    }
-    public static function get_week_forWorker($week,$worker)
-    {
-        $res = self::countSch();
-        if(count($res)==0)	return 1;
-        $mass = array();  
-        $mass[] = array('start'=>$res[0]['start'],'end'=>$res[0]['end'],'name'=>$worker,'sort'=>'worker');     
-      	$res = self::$dbh->query("SELECT discipline.name,groups.gname,time.start,time.end,nodes.numb_auditory,nodes.numb_two_week
-         FROM nodes JOIN discipline ON nodes.id_discipline=discipline.id JOIN workers ON workers.id=nodes.id_worker JOIN groups
-          ON groups.id=nodes.id_group JOIN time ON time.id=nodes.id_time WHERE nodes.id_main={$res[0]['id']} && nodes.numb_two_week".
-          ($week?">":"<=")."6 && workers.FIO='{$worker}';")->fetchAll();  
-       	return array_merge($mass, $res);   
-    }
-    public static function get_week_forAuditory($week,$auditory)
-    {
-        $res = self::countSch();
-        if(count($res)==0)	return 1;
-        $mass = array();  
-        $mass[] = array('start'=>$res[0]['start'],'end'=>$res[0]['end'],'name'=>$auditory,'sort'=>'auditory');     
-      	$res = self::$dbh->query("SELECT discipline.name,groups.gname,time.start,time.end,workers.FIO,nodes.numb_two_week
-         FROM nodes JOIN discipline ON nodes.id_discipline=discipline.id JOIN workers ON workers.id=nodes.id_worker JOIN groups
-          ON groups.id=nodes.id_group JOIN time ON time.id=nodes.id_time WHERE nodes.id_main={$res[0]['id']} && nodes.numb_two_week".
-          ($week?">":"<=")."6 && nodes.numb_auditory='{$auditory}';")->fetchAll();  
-       	return array_merge($mass, $res);   
-    }*/
     public static function get_now_forGroup($group)
     {
-    	    
+    	return get_nowDateForList(get_dayListForGroup('',$group));   
     }
+    public static function get_now_forWorker($worker)
+    {
+        return get_nowDateForList(get_dayListForWorker('',$worker));
+    }
+    public static function get_now_forAuditory($auditory)
+    {
+        return get_nowDateForList(get_dayListForAuditory('',$auditory));  
+    }
+    //---------------------------------------------------------------------------------------------------------------------------------
     public static function get_dayListForGroup($date,$group)
     {
     	$res = self::countSch();
@@ -71,20 +44,35 @@ class Schedule
        	if(count($res)==0)return 2;   
         return $res;
     }
-    public static function get_now_forWorker($worker)
+    public static function get_dayListForWorker($date,$worker)
     {
-        return ;    
+    	$res = self::countSch();
+    	if(count($res)==0)	return 1;
+     	$res = self::$dbh->query("SELECT discipline.name,groups.gname,time.start,time.end,nodes.numb_auditory,nodes.numb_two_week
+         FROM nodes JOIN discipline ON nodes.id_discipline=discipline.id JOIN workers ON workers.id=nodes.id_worker JOIN groups
+          ON groups.id=nodes.id_group JOIN time ON time.id=nodes.id_time WHERE nodes.id_main={$res[0]['id']} && nodes.numb_two_week=".
+          get_diffDateInDay($date,$res[0]['start'])." && workers.FIO='{$worker}' ORDER BY nodes.numb_two_week;")->fetchAll();  
+       	if(count($res)==0)return 2;   
+        return $res;
     }
-    public static function get_now_forAuditory($auditory)
+    public static function get_dayListForAuditory($date,$auditory)
     {
-        return ;    
+    	$res = self::countSch();
+    	if(count($res)==0)	return 1;
+     	$res = self::$dbh->query("SELECT discipline.name,workers.FIO,time.start,time.end,groups.gname,nodes.numb_two_week
+         FROM nodes JOIN discipline ON nodes.id_discipline=discipline.id JOIN workers ON workers.id=nodes.id_worker JOIN groups
+          ON groups.id=nodes.id_group JOIN time ON time.id=nodes.id_time WHERE nodes.id_main={$res[0]['id']} && nodes.numb_two_week=".
+          get_diffDateInDay($date,$res[0]['start'])." && nodes.numb_auditory='{$auditory}' ORDER BY nodes.numb_two_week;")->fetchAll();  
+       	if(count($res)==0)return 2;   
+        return $res;
     }
+    //---------------------------------------------------------------------------------------------------------------------------------
     private static function get_diffDateInDay($now,$_date)
     {
     	$date =date_diff(new DateTime($now), new DateTime($_date))->days+1;
 		return new DateTime($now) >= new DateTime($_date)?($date==7 || $date>=14)?0:($date<=7?$date:$date-1):0;
     }
-    public static function get_diffTimeInTime($now,$_time)
+    public static function get_diffTimeInTime($now,$_time)//не используется но пусть будет на всякий случай
     {
     	$time1 = $now==''?time():strtotime($now); 
 		return gmdate('H:i:s',abs($time1 - strtotime($_time)));
