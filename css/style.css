@@ -1,0 +1,9 @@
+body{
+	margin: 0px;
+	padding: 0;
+}
+.inl{
+display:inline-block;
+}
+.top-buffer { margin-top:20px; }
+.sh-vs { margin-top:60px; }
