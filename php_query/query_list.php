@@ -1,9 +1,5 @@
 ﻿<?php
 //-----------класс 1
-//метод подключения к инициировани подключения к бд
-// получить рассписание недель ,чей день сегодня входит(m1 по группе, m2 по преподавателю,m3 по аудитории) и указываем,верхняя или нижняя неделя
-// получить прошлую, сейчас и будущую пару ,чей день и время сегодня входит(m1 по группе, m2 по преподавателю,m3 по аудитории)
-//6 методов
 class Schedule
 { 
 	private static $dbh;
@@ -72,7 +68,7 @@ class Schedule
     	$date =date_diff(new DateTime($now), new DateTime($_date))->days+1;
 		return new DateTime($now) >= new DateTime($_date)?($date==7 || $date>=14)?0:($date<=7?$date:$date-1):0;
     }
-    public static function get_diffTimeInTime($now,$_time)//не используется но пусть будет на всякий случай
+    public static function get_diffTimeInTime($now,$_time)//метод нигде не используется, но пусть будет на всякий случай
     {
     	$time1 = $now==''?time():strtotime($now); 
 		return gmdate('H:i:s',abs($time1 - strtotime($_time)));
@@ -81,7 +77,7 @@ class Schedule
     {
     	$mass[]=array();
     	$nowdt =date("H:i:s");//сейчас дата/время
-    	if(strtotime($res[0]['start'])>strtotime($nowdt))//если дата меньше  начала первой пары ,то
+    	if(strtotime($res[0]['start'])>strtotime($nowdt))//если дата меньше начала первой пары ,то
     	{
     		$mass[0]='none';
     		$mass[1]='none';
@@ -113,9 +109,6 @@ class Schedule
     }
 }
 //-----------класс 2
-// вывести на первую страницу
-// вывести на вторую страницу
-//2 метода
 class BuilderFront
 {
  	public static function build_Main()
@@ -123,12 +116,21 @@ class BuilderFront
         
     }
     public static function build_Week()
-    {
-           
+    {    
+
     }
-    //public static funtion get_forDay($day/*1-6/7-12*/)
+    public static function get_forDay($numb_day)/*1-6/7-12*/
+    {	
+    	$sch = Schedule::countSch();
+    	$date =  strtotime((new DateTime($sch[0]['start']))->modify("+".($numb_day>6?$numb_day:($numb_day-1))." day")->format('Y-m-d'));
+    	setlocale(LC_ALL, 'rus_RUS');
+		$day_week =  iconv('windows-1251','UTF-8', ucfirst(strftime("%A", $date)));
+		$day =  strftime("%#d", $date);
+		$month = preg_replace("/т\$/u","та",preg_replace("/[ьй]\$/u", "я",  iconv('windows-1251','UTF-8',lcfirst(strftime("%B", $date)))));
+		$year =  strftime("%Y", $date)." год";		
+		return array('day_week' => $day_week, 'date'=>$day." ".$month." ".$year);
+    }
 }
-//всего будет 8 методов
 //----------------------некоторая реализация
 Schedule::base_connect('127.0.0.1','schedule','root','');
 ?>
