@@ -119,10 +119,15 @@ class BuilderFront
     {    
 
     }
-    public static function get_forDay($numb_day)/*1-6/7-12*/
+    private static function get_forDay($numb_day)/*1-6/7-12*/
     {	
     	$sch = Schedule::countSch();
-    	$date =  strtotime((new DateTime($sch[0]['start']))->modify("+".($numb_day>6?$numb_day:($numb_day-1))." day")->format('Y-m-d'));
+    	$date = (new DateTime($sch[0]['start']))->modify("+".($numb_day>6?$numb_day:($numb_day-1))." day")->format('Y-m-d');
+    	return get_formatDate($date);
+    }
+    public static function get_formatDate($date)
+    {
+    	$date=$date==''?time():strtotime($date);
     	setlocale(LC_ALL, 'rus_RUS');
 		$day_week =  iconv('windows-1251','UTF-8', ucfirst(strftime("%A", $date)));
 		$day =  strftime("%#d", $date);
