@@ -27,7 +27,7 @@
         </div>
         <div class="col-md-6 top-buffer">
           <div class="col-md-5"><button type="button" class="btn btn-default">Перейти на верхнюю неделю</button></div>
-          <div class="col-md-2 col-md-offset-1"><button type="button" class="btn btn-default">Сохнанить</button></div>
+          <div class="col-md-2 col-md-offset-1"><button type="button" class="btn btn-default">Сохранить</button></div>
           <div class="col-md-2"><button type="button" class="btn btn-default">Распечатать</button></div>
         </div>
       </div>

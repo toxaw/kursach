@@ -21,18 +21,23 @@ class Schedule
 		return self::$dbh->query("SELECT * FROM `main` WHERE start<=now() and end>now();")->fetchAll();
 	}
 	//---------------------------------------------------------------------------------------------------------------------------------
-    public static function get_now_forGroup($group)
-    {
-    	return get_nowDateForList(get_dayListForGroup('',$group));   
-    }
-    public static function get_now_forWorker($worker)
-    {
-        return get_nowDateForList(get_dayListForWorker('',$worker));
-    }
-    public static function get_now_forAuditory($auditory)
-    {
-        return get_nowDateForList(get_dayListForAuditory('',$auditory));  
-    }
+	public static function get_now($set, $name)
+	{
+		switch ($set) {
+			case 'group':
+				return self::get_nowDateForList(self::get_dayListForGroup('',$name));
+				break;
+			case 'worker':
+				return self::get_nowDateForList(self::get_dayListForWorker('',$name));
+				break;
+			case 'auditory':
+				return self::get_nowDateForList(self::get_dayListForAuditory('',$name));
+				break;
+			default:
+				return 2;
+				break;
+		}	  
+	}
     //---------------------------------------------------------------------------------------------------------------------------------
     public static function get_dayListForGroup($date,$group)
     {
@@ -41,7 +46,7 @@ class Schedule
      	$res = self::$dbh->query("SELECT discipline.name,workers.FIO,time.start,time.end,nodes.numb_auditory,nodes.numb_two_week
          FROM nodes JOIN discipline ON nodes.id_discipline=discipline.id JOIN workers ON workers.id=nodes.id_worker JOIN groups
           ON groups.id=nodes.id_group JOIN time ON time.id=nodes.id_time WHERE nodes.id_main={$res[0]['id']} && nodes.numb_two_week=".
-          get_diffDateInDay($date,$res[0]['start'])." && groups.gname='{$group}' ORDER BY nodes.numb_two_week;")->fetchAll();  
+          self::get_diffDateInDay($date,$res[0]['start'])." && groups.gname='{$group}' ORDER BY nodes.numb_two_week;")->fetchAll();  
        	if(count($res)==0)return 2;   
         return $res;
     }
@@ -52,7 +57,7 @@ class Schedule
      	$res = self::$dbh->query("SELECT discipline.name,groups.gname,time.start,time.end,nodes.numb_auditory,nodes.numb_two_week
          FROM nodes JOIN discipline ON nodes.id_discipline=discipline.id JOIN workers ON workers.id=nodes.id_worker JOIN groups
           ON groups.id=nodes.id_group JOIN time ON time.id=nodes.id_time WHERE nodes.id_main={$res[0]['id']} && nodes.numb_two_week=".
-          get_diffDateInDay($date,$res[0]['start'])." && workers.FIO='{$worker}' ORDER BY nodes.numb_two_week;")->fetchAll();  
+          self::get_diffDateInDay($date,$res[0]['start'])." && workers.FIO='{$worker}' ORDER BY nodes.numb_two_week;")->fetchAll();  
        	if(count($res)==0)return 2;   
         return $res;
     }
@@ -63,7 +68,7 @@ class Schedule
      	$res = self::$dbh->query("SELECT discipline.name,workers.FIO,time.start,time.end,groups.gname,nodes.numb_two_week
          FROM nodes JOIN discipline ON nodes.id_discipline=discipline.id JOIN workers ON workers.id=nodes.id_worker JOIN groups
           ON groups.id=nodes.id_group JOIN time ON time.id=nodes.id_time WHERE nodes.id_main={$res[0]['id']} && nodes.numb_two_week=".
-          get_diffDateInDay($date,$res[0]['start'])." && nodes.numb_auditory='{$auditory}' ORDER BY nodes.numb_two_week;")->fetchAll();  
+          self::get_diffDateInDay($date,$res[0]['start'])." && nodes.numb_auditory='{$auditory}' ORDER BY nodes.numb_two_week;")->fetchAll();  
        	if(count($res)==0)return 2;   
         return $res;
     }
@@ -113,16 +118,66 @@ class Schedule
     		}
     	return $mass;
     }
-    //get все группы, get все приподаватели, get все auditory.
+    //---------------------------------------------------------------------------------------------------------------------------------
+    public static function get_groups()
+    {
+    	return self::$dbh->query("SELECT gname AS 'value' FROM groups;")->fetchAll();
+    }
+    public static function get_workers()
+    {
+    	return self::$dbh->query("SELECT FIO AS 'value' FROM workers;")->fetchAll();
+    }
+    public static function get_auditories()
+    {
+    	return self::$dbh->query("SELECT DISTINCT numb_auditory AS 'value' FROM nodes;")->fetchAll();
+    }
 }
 //-----------класс 2
 class BuilderFront
 {
- 	public static function build_Main()//формировка ответа
+	private static $arr, $set;
+	public static function set_array_write($arr, $set)//присвоение массива
+    {
+    	self::$arr=$arr;
+    	self::$set=$set;
+    }
+	public static function array_write($index, $primary)//формировка массива
+    {
+    	$none = array('none','1','2','');
+    	$primaryTpl = array('group' => array('name', 'FIO', 'time', 'numb_auditory'),
+                     			'worker' => array('name', 'gname', 'time', 'numb_auditory'),
+                     			'auditory' => array('name', 'FIO', 'time', 'gname') );
+    	foreach($none as $value)if($arr==$value){echo '-'; return;}
+    	foreach($none as $value)if($arr[$index][$primaryTpl[$set][$primary]]==$value){echo '-'; return;}
+    	if($primaryTpl[$set][$primary]=='time')
+    		echo $arr[$index]['start'].' - '.$arr[$index]['end']; return;
+    	echo $arr[$index][$primaryTpl[$set][$primary]];
+    }
+ 	public static function build_main()
     {
         
     }
-    public static function build_Week()
+    public static function create_dropList($set)//формирование списка выпадающего списка
+    {
+    	$res=array();
+    	switch ($set) {
+    		case 'group':
+    			$res=Schedule:: get_groups();
+    			break;
+    		case 'worker':
+    			$res=Schedule:: get_workers();
+    			break;
+    		case 'auditory':
+    			$res=Schedule:: get_auditories();
+    			break;
+    		default:
+    			$res='none';
+    			break;
+    	}
+        foreach ($res as $value) 
+   			echo '<li><a href="#">'.$value['value'].'</a></li>';
+    }
+    public static function build_week()
     {    
 
     }
@@ -145,4 +200,8 @@ class BuilderFront
 }
 //----------------------некоторая реализация
 Schedule::base_connect('127.0.0.1','schedule','root','');
+//---------------------шаблон на 3 способа изображения рассписания
+$dataTemplate = array('group' => array('по группе', 'Дисциплина', 'Преподаватель', 'Рассписание', 'Аудитория','Группа:'),
+                     'worker' => array('по преподавателю', 'Дисциплина', 'Группа', 'Рассписание', 'Аудитория','Преподаватель:'),
+                     'auditory' => array('по аудитории', 'Дисциплина', 'Преподаватель', 'Рассписание', 'Группа','Аудитория:') );
 ?>
