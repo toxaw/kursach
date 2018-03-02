@@ -3,16 +3,19 @@
 class Schedule
 { 
 	private static $dbh;
-	//---------------------------------------------------------------------------------------------------------------------------------
 	public static function base_connect($host,$dbname,$login,$password)
     {
-		try {
-	    self::$dbh = new PDO("mysql:host={$host};dbname={$dbname}", $login, $password);
-		} catch (PDOException $e) {
-	    print "Error!: " . $e->getMessage() . "<br/>";
-	    die();
+		try 
+		{
+	    	self::$dbh = new PDO("mysql:host={$host};dbname={$dbname}", $login, $password);
+		}
+		catch (PDOException $e) 
+		{
+	    	print "Error!: " . $e->getMessage() . "<br/>";
+	    	die();
 		}
 	}
+	//---------------------------------------------------------------------------------------------------------------------------------
 	public static function countSch()
 	{
 		return self::$dbh->query("SELECT * FROM `main` WHERE start<=now() and end>now();")->fetchAll();
@@ -110,11 +113,12 @@ class Schedule
     		}
     	return $mass;
     }
+    //get все группы, get все приподаватели, get все auditory.
 }
 //-----------класс 2
 class BuilderFront
 {
- 	public static function build_Main()
+ 	public static function build_Main()//формировка ответа
     {
         
     }
