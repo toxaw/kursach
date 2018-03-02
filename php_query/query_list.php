@@ -150,7 +150,7 @@ class BuilderFront
     	foreach($none as $value)if($arr==$value){echo '-'; return;}
     	foreach($none as $value)if($arr[$index][$primaryTpl[$set][$primary]]==$value){echo '-'; return;}
     	if($primaryTpl[$set][$primary]=='time')
-    		echo $arr[$index]['start'].' - '.$arr[$index]['end']; return;
+    		echo strftime("%H:%M", strtotime($arr[$index]['start'])).' - '.strftime("%H:%M", strtotime($arr[$index]['end'])); return;
     	echo $arr[$index][$primaryTpl[$set][$primary]];
     }
  	public static function build_main()
@@ -172,8 +172,9 @@ class BuilderFront
     			break;
     		default:
     			$res='none';
+    			return;
     			break;
-    	}
+    	}  	
         foreach ($res as $value) 
    			echo '<li><a href="#">'.$value['value'].'</a></li>';
     }
@@ -201,7 +202,7 @@ class BuilderFront
 //----------------------некоторая реализация
 Schedule::base_connect('127.0.0.1','schedule','root','');
 //---------------------шаблон на 3 способа изображения рассписания
-$dataTemplate = array('group' => array('по группе', 'Дисциплина', 'Преподаватель', 'Рассписание', 'Аудитория','Группа:'),
-                     'worker' => array('по преподавателю', 'Дисциплина', 'Группа', 'Рассписание', 'Аудитория','Преподаватель:'),
-                     'auditory' => array('по аудитории', 'Дисциплина', 'Преподаватель', 'Рассписание', 'Группа','Аудитория:') );
+$dataTemplate = array('group' => array('по группе', 'Дисциплина', 'Преподаватель', 'Расписание', 'Аудитория','Группа:'),
+                     'worker' => array('по преподавателю', 'Дисциплина', 'Группа', 'Расписание', 'Аудитория','Преподаватель:'),
+                     'auditory' => array('по аудитории', 'Дисциплина', 'Преподаватель', 'Расписание', 'Группа','Аудитория:') );
 ?>

@@ -31,15 +31,19 @@ BuilderFront::set_array_write(Schedule::get_now($_POST['set'], $_POST['name']),$
       <h3 class="col-md inl"> <?php echo $dataTemplate[$_POST['set']][5];?></h3>
     <div class="dropdown col-md inl">
   <button class="btn btn-default dropdown-toggle" type="button" id="dropdownMenu1" data-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-    <p style="display:inline">Выбрать</p>
+    <p style="display:inline"><?php echo $_POST['name']==''?'Выбрать':$_POST['name']; ?></p>
     <span class="caret"></span>
   </button>
   <ul class="dropdown-menu" aria-labelledby="dropdownMenu1">
   <?php BuilderFront::create_dropList($_POST['set']); ?>
   </ul>
 </div>
-<button class="btn btn-default col-md inl">Показать</button>
-<button class="btn btn-default col-md inl">Рассписание на неделю</button>
+<form class='inl' method="post">
+  <input type="hidden" name="set" value="<?php echo $_POST['set']; ?>">
+  <input type="hidden" id="sbmn" name="name" value="<?php echo $_POST['name']; ?>">
+<button type="submit" class="btn btn-default col-md inl">Показать</button>
+<button type="submit" formaction="./full_list.php" class="btn btn-default col-md inl">Рассписание на неделю</button>
+</form>
 </div>
 <div class="row">
   <div class="top-buffer col-md-8 col-md-offset-2">
@@ -55,21 +59,21 @@ BuilderFront::set_array_write(Schedule::get_now($_POST['set'], $_POST['name']),$
   <tbody>
     <tr>
       <td><?php BuilderFront::array_write(0,0);?></td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
+      <td><?php BuilderFront::array_write(0,1);?></td>
+      <td><?php BuilderFront::array_write(0,2);?></td>
+      <td><?php BuilderFront::array_write(0,3);?></td>
     </tr>
     <tr class="info">
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
+      <td><?php BuilderFront::array_write(1,0);?></td>
+      <td><?php BuilderFront::array_write(1,1);?></td>
+      <td><?php BuilderFront::array_write(1,2);?></td>
+      <td><?php BuilderFront::array_write(1,3);?></td>
     </tr>
     <tr>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
-      <td>-</td>
+      <td><?php BuilderFront::array_write(2,0);?></td>
+      <td><?php BuilderFront::array_write(2,1);?></td>
+      <td><?php BuilderFront::array_write(2,2);?></td>
+      <td><?php BuilderFront::array_write(2,3);?></td>
     </tr>
   </tbody>
 </table>
@@ -91,7 +95,6 @@ BuilderFront::set_array_write(Schedule::get_now($_POST['set'], $_POST['name']),$
 </div>
   </body>
   <script>
-  var name ='';
   function update() {
     var date = new Date(); // (*)
     var hours = date.getHours();
@@ -101,9 +104,13 @@ BuilderFront::set_array_write(Schedule::get_now($_POST['set'], $_POST['name']),$
     var seconds = date.getSeconds();
     if (seconds < 10) seconds = '0' + seconds;
     $('.clock').text(hours+":"+minutes+":"+seconds);
+    if(seconds==59) location.reload();
 }
     timerId = setInterval(update, 1000);
     update();
-    $('.dropdown-menu li a').click(function(){$('.dropdown p').text(name=$(this).text());});
+    $('.dropdown-menu li a').click(function(){
+      $('.dropdown p').text($(this).text());
+      $('#sbmn').val($(this).text());
+    });
   </script>
 </html>
