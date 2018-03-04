@@ -18,74 +18,98 @@ class Schedule
 	//---------------------------------------------------------------------------------------------------------------------------------
 	public static function countSch()
 	{
-		return self::$dbh->query("SELECT * FROM `main` WHERE start<=now() and end>now();")->fetchAll();
+		return self::$dbh->query("SELECT * FROM `main` WHERE CURDATE()>=start and CURDATE()<=end;")->fetchAll();
 	}
 	//---------------------------------------------------------------------------------------------------------------------------------
 	public static function get_now($set, $name)
 	{
 		switch ($set) {
 			case 'group':
-				return self::get_nowDateForList(self::get_dayListForGroup('',$name));
+				return self::get_nowDateForList(self::get_dayListForGroup('',$name, true));
 				break;
 			case 'worker':
-				return self::get_nowDateForList(self::get_dayListForWorker('',$name));
+				return self::get_nowDateForList(self::get_dayListForWorker('',$name, true));
 				break;
 			case 'auditory':
-				return self::get_nowDateForList(self::get_dayListForAuditory('',$name));
+				return self::get_nowDateForList(self::get_dayListForAuditory('',$name, true));
 				break;
 			default:
 				return 2;
 				break;
 		}	  
 	}
+	public static function get_list($set, $name, $date)
+	{
+	   switch ($set) {
+            case 'group':
+                return self::get_dayListForGroup($date ,$name , false);
+                break;
+            case 'worker':
+                return self::get_dayListForWorker($date ,$name , false);
+                break;
+            case 'auditory':
+                return self::get_dayListForAuditory($date ,$name , false);
+                break;
+            default:
+                return 2;
+                break;
+        }	
+	}
     //---------------------------------------------------------------------------------------------------------------------------------
-    public static function get_dayListForGroup($date,$group)
+    public static function get_dayListForGroup($date,$group,$method)
     {
     	$res = self::countSch();
     	if(count($res)==0)	return 1;
-     	$res = self::$dbh->query("SELECT discipline.name,workers.FIO,time.start,time.end,nodes.numb_auditory,nodes.numb_two_week
+        $date=$method?self::get_diffDateInDay($date,$res[0]['start'],true):$date;
+     	$res = self::$dbh->query("SELECT discipline.name,workers.FIO,time.start,time.end,nodes.numb_auditory, nodes.id_time
          FROM nodes JOIN discipline ON nodes.id_discipline=discipline.id JOIN workers ON workers.id=nodes.id_worker JOIN groups
           ON groups.id=nodes.id_group JOIN time ON time.id=nodes.id_time WHERE nodes.id_main={$res[0]['id']} && nodes.numb_two_week=".
-          self::get_diffDateInDay($date,$res[0]['start'])." && groups.gname='{$group}' ORDER BY nodes.numb_two_week;")->fetchAll();  
-       	if(count($res)==0)return 2;   
-        return $res;
+         $date." && groups.gname='{$group}' ORDER BY nodes.id_time;")->fetchAll();    
+        return self::set_joinList($res);
     }
-    public static function get_dayListForWorker($date,$worker)
+    public static function get_dayListForWorker($date,$worker,$method)
     {
     	$res = self::countSch();
     	if(count($res)==0)	return 1;
-     	$res = self::$dbh->query("SELECT discipline.name,groups.gname,time.start,time.end,nodes.numb_auditory,nodes.numb_two_week
+        $date=$method?self::get_diffDateInDay($date,$res[0]['start'],true):$date;
+     	$res = self::$dbh->query("SELECT discipline.name,groups.gname,time.start,time.end,nodes.numb_auditory, nodes.id_time
          FROM nodes JOIN discipline ON nodes.id_discipline=discipline.id JOIN workers ON workers.id=nodes.id_worker JOIN groups
           ON groups.id=nodes.id_group JOIN time ON time.id=nodes.id_time WHERE nodes.id_main={$res[0]['id']} && nodes.numb_two_week=".
-          self::get_diffDateInDay($date,$res[0]['start'])." && workers.FIO='{$worker}' ORDER BY nodes.numb_two_week;")->fetchAll();  
-       	if(count($res)==0)return 2;   
-        return $res;
+          $date." && workers.FIO='{$worker}' ORDER BY nodes.id_time;")->fetchAll();     
+        return self::set_joinList($res);
     }
-    public static function get_dayListForAuditory($date,$auditory)
+    public static function get_dayListForAuditory($date,$auditory,$method)
     {
     	$res = self::countSch();
     	if(count($res)==0)	return 1;
-     	$res = self::$dbh->query("SELECT discipline.name,workers.FIO,time.start,time.end,groups.gname,nodes.numb_two_week
+        $date=$method?self::get_diffDateInDay($date,$res[0]['start'],true):$date;
+     	$res = self::$dbh->query("SELECT discipline.name,workers.FIO,time.start,time.end,groups.gname, nodes.id_time
          FROM nodes JOIN discipline ON nodes.id_discipline=discipline.id JOIN workers ON workers.id=nodes.id_worker JOIN groups
           ON groups.id=nodes.id_group JOIN time ON time.id=nodes.id_time WHERE nodes.id_main={$res[0]['id']} && nodes.numb_two_week=".
-          self::get_diffDateInDay($date,$res[0]['start'])." && nodes.numb_auditory='{$auditory}' ORDER BY nodes.numb_two_week;")->fetchAll();  
-       	if(count($res)==0)return 2;   
-        return $res;
+          $date." && nodes.numb_auditory='{$auditory}' ORDER BY nodes.id_time;")->fetchAll();    
+        return self::set_joinList($res);
     }
     //---------------------------------------------------------------------------------------------------------------------------------
-    private static function get_diffDateInDay($now,$_date)
+    private static function get_diffDateInDay($now,$_date,$method)
     {
     	$date =date_diff(new DateTime($now), new DateTime($_date))->days+1;
-		return new DateTime($now) >= new DateTime($_date)?($date==7 || $date>=14)?0:($date<=7?$date:$date-1):0;
+		return $method?(new DateTime($now) >= new DateTime($_date)?($date==7 || $date>=14)?0:($date<=7?$date:$date-1):0):$date;
     }
     public static function get_diffTimeInTime($now,$_time)//метод нигде не используется, но пусть будет на всякий случай
     {
     	$time1 = $now==''?time():strtotime($now); 
 		return gmdate('H:i:s',abs($time1 - strtotime($_time)));
     }
+    public static function get_nowWeek()
+    {
+    	$res = self::countSch();
+    	if(count($res)==0)	return 1;
+    	return self::get_diffDateInDay('',$res[0]['start'],false)<=7?"down":"up";
+    }
     //---------------------------------------------------------------------------------------------------------------------------------
     private static function get_nowDateForList($res)
     {
+        if(count($res)==0) return 2;
     	$mass[]=array();
     	$nowdt =date("H:i:s");//сейчас дата/время
     	if(strtotime($res[0]['start'])>strtotime($nowdt))//если дата меньше начала первой пары ,то
@@ -118,6 +142,23 @@ class Schedule
     		}
     	return $mass;
     }
+    private static function set_joinList($inArr)//функция объединения в данный момент пар
+    {
+        if($inArr==1) return 1;
+        $outArr= array();
+        for ($i=0; $i < count($inArr); $i++)
+        { 
+            $outArr[] = $inArr[$i];
+            for ($j=$i+1; $j < count($inArr); $j++) 
+            { 
+                if($inArr[$i]['id_time']!=$inArr[$j]['id_time']){$i=$j-1; break;}
+                $keys = array_keys($inArr[$i]);              
+                for ($k=0; $k < count($keys); $k++) //Слияние пар совподающих по времени, исключая совпадений в полях
+                    $outArr[(count($outArr)-1)][$keys[$k]] .= ($inArr[$i][$keys[$k]]!=$inArr[$j][$keys[$k]])?(", ".$inArr[$j][$keys[$k]]):"";                           
+            }
+        }
+        return $outArr;
+    }
     //---------------------------------------------------------------------------------------------------------------------------------
     public static function get_groups()
     {
@@ -129,13 +170,17 @@ class Schedule
     }
     public static function get_auditories()
     {
-    	return self::$dbh->query("SELECT DISTINCT numb_auditory AS 'value' FROM nodes;")->fetchAll();
+    	return self::$dbh->query("SELECT DISTINCT numb_auditory AS 'value' FROM nodes WHERE numb_auditory!='';")->fetchAll();
     }
 }
 //-----------класс 2
 class BuilderFront
 {
 	private static $arr, $set;
+    //---------------------шаблон на 3 способа изображения рассписания
+    public static $dataTemplate = array('group' => array('по группе', 'Дисциплина', 'Преподаватель', 'Расписание', 'Аудитория','Группа:','группы'),
+                                        'worker' => array('по преподавателю', 'Дисциплина', 'Группа', 'Расписание', 'Аудитория','Преподаватель:','преподавателя'),
+                                        'auditory' => array('по аудитории', 'Дисциплина', 'Преподаватель', 'Расписание', 'Группа','Аудитория:','аудитории') );
 	public static function set_array_write($arr, $set)//присвоение массива
     {
     	self::$arr=$arr;
@@ -145,19 +190,20 @@ class BuilderFront
     {
     	$none = array('none','1','2','');
     	$primaryTpl = array('group' => array('name', 'FIO', 'time', 'numb_auditory'),
-                     			'worker' => array('name', 'gname', 'time', 'numb_auditory'),
-                     			'auditory' => array('name', 'FIO', 'time', 'gname') );
-    	foreach($none as $value)if($arr==$value){echo '-'; return;}
-    	foreach($none as $value)if($arr[$index][$primaryTpl[$set][$primary]]==$value){echo '-'; return;}
-    	if($primaryTpl[$set][$primary]=='time')
-    		echo strftime("%H:%M", strtotime($arr[$index]['start'])).' - '.strftime("%H:%M", strtotime($arr[$index]['end'])); return;
-    	echo $arr[$index][$primaryTpl[$set][$primary]];
+                     		'worker' => array('name', 'gname', 'time', 'numb_auditory'),
+                     		'auditory' => array('name', 'FIO', 'time', 'gname') );    	
+        foreach($none as $value)
+        {
+            if(self::$arr==$value) return '-';
+            if(self::$arr[$index]==$value) return '-';   	 
+        }
+        if($primaryTpl[self::$set][$primary]=='time')
+            return strftime("%H:%M", strtotime(self::$arr[$index]['start'])).' - '.strftime("%H:%M", strtotime(self::$arr[$index]['end']));
+        foreach($none as $value)
+            if(self::$arr[$index][$primaryTpl[self::$set][$primary]]==$value) return '-';
+    	return self::$arr[$index][$primaryTpl[self::$set][$primary]];
     }
- 	public static function build_main()
-    {
-        
-    }
-    public static function create_dropList($set)//формирование списка выпадающего списка
+    public static function create_dropList($set)//формирование выпадающего списка
     {
     	$res=array();
     	switch ($set) {
@@ -178,15 +224,63 @@ class BuilderFront
         foreach ($res as $value) 
    			echo '<li><a href="#">'.$value['value'].'</a></li>';
     }
-    public static function build_week()
-    {    
-
+    public static function build_weekList($set,$name,$week)
+    {   
+        $text; 
+        for ($i=($week=="down"?1:7); $i <= ($week=="down"?6:12); $i++) //$i - номер дня недели 1-6/7-12
+        { 
+            self::set_array_write(Schedule::get_list($set,$name,$i),$set);
+            if(self::$arr==1) return;
+            $ans = self::get_forDay($i);
+            $table=self::build_weekTable();
+            if($table=="") continue;
+            $text=$text."<div class='row sh-vs'>
+              <div class='col-md-6'>
+                <h4 class='col-md-offset-5'>".$ans['day_week']."</h4>
+              </div>
+              <div class='col-md-6'>
+                <h4 class='col-md-offset-4'>".$ans['date']."</h4>
+              </div>
+            </div>
+            <div class='row'>
+              <div class='top-buffer col-md-8 col-md-offset-2'>
+              <table class='table table-bordered'>
+                <thead>
+                  <tr>
+                    <th>".self::$dataTemplate[$set][1]."</th>
+                    <th>".self::$dataTemplate[$set][2]."</th>
+                    <th>".self::$dataTemplate[$set][3]."</th>
+                    <th>".self::$dataTemplate[$set][4]."</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ".$table."
+                </tbody>
+              </table>
+              </div>
+            </div>";
+        }      
+        return $text!=""?$text:"<h3 class='text-center'>Расписание отсутствует</h3>";
+    }
+    public static function build_weekTable()
+    {
+        $text;
+        if(self::$arr==2) return '';   
+        for ($i=0; $i <count(self::$arr); $i++) { 
+            $text=$text."<tr>
+                         <td>".self::array_write($i, 0)."</td>
+                         <td>".self::array_write($i, 1)."</td>
+                         <td>".self::array_write($i, 2)."</td>
+                         <td>".self::array_write($i, 3)."</td>
+                         </tr>";
+                   }
+        return $text;            
     }
     private static function get_forDay($numb_day)/*1-6/7-12*/
     {	
-    	$sch = Schedule::countSch();
+        $sch = Schedule::countSch();
     	$date = (new DateTime($sch[0]['start']))->modify("+".($numb_day>6?$numb_day:($numb_day-1))." day")->format('Y-m-d');
-    	return get_formatDate($date);
+    	return self::get_formatDate($date);
     }
     public static function get_formatDate($date)
     {
@@ -201,8 +295,4 @@ class BuilderFront
 }
 //----------------------некоторая реализация
 Schedule::base_connect('127.0.0.1','schedule','root','');
-//---------------------шаблон на 3 способа изображения рассписания
-$dataTemplate = array('group' => array('по группе', 'Дисциплина', 'Преподаватель', 'Расписание', 'Аудитория','Группа:'),
-                     'worker' => array('по преподавателю', 'Дисциплина', 'Группа', 'Расписание', 'Аудитория','Преподаватель:'),
-                     'auditory' => array('по аудитории', 'Дисциплина', 'Преподаватель', 'Расписание', 'Группа','Аудитория:') );
 ?>
