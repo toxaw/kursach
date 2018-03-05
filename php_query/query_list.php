@@ -100,11 +100,15 @@ class Schedule
     	$time1 = $now==''?time():strtotime($now); 
 		return gmdate('H:i:s',abs($time1 - strtotime($_time)));
     }
+    public static function get_nowNumbWeek()
+    {
+        $res = self::countSch();
+        if(count($res)==0)  return 1;
+        return self::get_diffDateInDay('',$res[0]['start'],false);
+    }
     public static function get_nowWeek()
     {
-    	$res = self::countSch();
-    	if(count($res)==0)	return 1;
-    	return self::get_diffDateInDay('',$res[0]['start'],false)<=7?"down":"up";
+    	return self::get_nowNumbWeek()<=7?"down":"up";
     }
     //---------------------------------------------------------------------------------------------------------------------------------
     private static function get_nowDateForList($res)
@@ -232,7 +236,10 @@ class BuilderFront
             self::set_array_write(Schedule::get_list($set,$name,$i),$set);
             if(self::$arr==1) return;
             $ans = self::get_forDay($i);
-            $table=self::build_weekTable();
+            $_now = Schedule::get_nowNumbWeek();
+            $_now = ($_now==7 || $_now>14)?0:$_now;
+            $now = ($_now<=7?$_now:$_now-1)==$i;
+            $table=self::build_weekTable($now);
             if($table=="") continue;
             $text=$text."<div class='row sh-vs'>
               <div class='col-md-6'>
@@ -244,9 +251,9 @@ class BuilderFront
             </div>
             <div class='row'>
               <div class='top-buffer col-md-8 col-md-offset-2'>
-              <table class='table table-bordered'>
+              <table class='table table-bordered table'>
                 <thead>
-                  <tr>
+                  <tr".($now?" class='info'":"").">
                     <th>".self::$dataTemplate[$set][1]."</th>
                     <th>".self::$dataTemplate[$set][2]."</th>
                     <th>".self::$dataTemplate[$set][3]."</th>
@@ -262,12 +269,12 @@ class BuilderFront
         }      
         return $text!=""?$text:"<h3 class='text-center'>Расписание отсутствует</h3>";
     }
-    public static function build_weekTable()
+    public static function build_weekTable($now)
     {
         $text;
         if(self::$arr==2) return '';   
         for ($i=0; $i <count(self::$arr); $i++) { 
-            $text=$text."<tr>
+            $text=$text."<tr".($now?" class='info'":"").">
                          <td>".self::array_write($i, 0)."</td>
                          <td>".self::array_write($i, 1)."</td>
                          <td>".self::array_write($i, 2)."</td>
