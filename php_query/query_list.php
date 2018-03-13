@@ -128,7 +128,7 @@ class Schedule
     		$mass[1]=$res[0];
     		$mass[2]=count($res)>1?$res[1]:'none';
     	}
-    	else if(strtotime($res[count($res)-1]['end'])<strtotime($nowdt))//если дата больше конца последней пары ,то
+    	else if(strtotime($res[count($res)-1]['end'])<=strtotime($nowdt))//если дата больше конца последней пары ,то
     	{   		
     		$mass[0]=$res[count($res)-1];
     		$mass[1]='none';
@@ -136,7 +136,7 @@ class Schedule
     	}
     	else for($i=1;i<count($res);$i++) //если внутри рассписания кроме первой пары
     		{
-    			if(strtotime($res[$i-1]['end'])<strtotime($nowdt) && strtotime($res[$i]['end'])>=strtotime($nowdt))
+    			if(strtotime($res[$i-1]['end'])<=strtotime($nowdt) && strtotime($res[$i]['end'])>strtotime($nowdt))
     			{
     				$mass[0]=$res[$i-1];
     				$mass[1]=$res[$i];
@@ -252,6 +252,10 @@ class BuilderFront
             <div class='row'>
               <div class='top-buffer col-md-8 col-md-offset-2'>
               <table class='table table-bordered table'>
+                <col width='260'>
+                <col width='120'>
+                <col width='60'>
+                <col width='10'>
                 <thead>
                   <tr".($now?" class='info'":"").">
                     <th>".self::$dataTemplate[$set][1]."</th>
